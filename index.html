@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Game - Nokia 1100 Style</title>
+<style>
+    body {
+        background-color: #c0c0c0;
+        margin: 0;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    #gameCanvas {
+        background-color: #000;
+        display: block;
+        margin: auto;
+    }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="200" height="200"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const box = 10;
+    let snake = [{x: 100, y: 100}];
+    let food = {x: 0, y: 0};
+    let dx = 0;
+    let dy = 0;
+
+    function drawSnake() {
+        ctx.fillStyle = "#00ff00";
+        snake.forEach(segment => {
+            ctx.fillRect(segment.x, segment.y, box, box);
+        });
+    }
+
+    function drawFood() {
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(food.x, food.y, box, box);
+    }
+
+    function generateFood() {
+        food.x = Math.floor(Math.random() * 20) * box;
+        food.y = Math.floor(Math.random() * 20) * box;
+    }
+
+    function checkCollision() {
+        if (snake[0].x === food.x && snake[0].y === food.y) {
+            snake.push({x: snake[0].x, y: snake[0].y});
+            generateFood();
+        }
+    }
+
+    function moveSnake() {
+        const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+        snake.unshift(head);
+        snake.pop();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawSnake();
+        drawFood();
+        checkCollision();
+        moveSnake();
+    }
+
+    function controlSnake(event) {
+        const key = event.keyCode;
+        if (key === 37 && dx === 0) {
+            dx = -box;
+            dy = 0;
+        } else if (key === 38 && dy === 0) {
+            dx = 0;
+            dy = -box;
+        } else if (key === 39 && dx === 0) {
+            dx = box;
+            dy = 0;
+        } else if (key === 40 && dy === 0) {
+            dx = 0;
+            dy = box;
+        }
+    }
+
+    function handleTouchStart(event) {
+        const touchX = event.touches[0].clientX;
+        const touchY = event.touches[0].clientY;
+        const headX = snake[0].x;
+        const headY = snake[0].y;
+        const dx = touchX - headX;
+        const dy = touchY - headY;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // horizontal swipe
+            if (dx > 0) {
+                // swipe right
+                controlSnake({ keyCode: 39 }); // simulate right arrow key
+            } else {
+                // swipe left
+                controlSnake({ keyCode: 37 }); // simulate left arrow key
+            }
+        } else {
+            // vertical swipe
+            if (dy > 0) {
+                // swipe down
+                controlSnake({ keyCode: 40 }); // simulate down arrow key
+            } else {
+                // swipe up
+                controlSnake({ keyCode: 38 }); // simulate up arrow key
+            }
+        }
+    }
+
+    generateFood();
+    setInterval(draw, 100);
+    document.addEventListener("keydown", controlSnake);
+    canvas.addEventListener("touchstart", handleTouchStart);
+</script>
+</body>
+</html>
