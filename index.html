@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bắn Pháo Hoa - Chào mừng 30/4</title>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #000 0%, #222 100%);
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+#scoreboard {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    background: rgba(0,0,0,0.5);
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+#gameover {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 26px;
+    background: rgba(0,0,0,0.7);
+    padding: 20px 30px;
+    border-radius: 16px;
+    display: none;
+}
+button {
+    padding: 10px 20px;
+    font-size: 18px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #007aff;
+    color: white;
+}
+button:hover {
+    background-color: #005bb5;
+}
+.firework {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, yellow, red, orange);
+    border-radius: 50%;
+}
+</style>
+</head>
+<body>
+
+<div id="scoreboard">Điểm: 0 | Thời gian: 15s</div>
+<div id="gameover">
+    <div id="finalscore"></div>
+    <button onclick="restartGame()">Chơi lại</button>
+</div>
+
+<script>
+let score = 0;
+let timeLeft = 15;
+let gameInterval;
+let spawnInterval;
+
+function createFirework() {
+    const firework = document.createElement('div');
+    firework.classList.add('firework');
+    firework.style.top = window.innerHeight + 'px';
+    firework.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+    document.body.appendChild(firework);
+
+    const speed = Math.random() * 2 + 1;
+
+    const move = setInterval(() => {
+        let top = parseFloat(firework.style.top);
+        if (top < -50) {
+            firework.remove();
+            clearInterval(move);
+        } else {
+            firework.style.top = (top - speed*5) + 'px';
+        }
+    }, 30);
+
+    firework.addEventListener('click', () => {
+        score += 10;
+        updateScoreboard();
+        firework.remove();
+        clearInterval(move);
+    });
+}
+
+function updateScoreboard() {
+    document.getElementById('scoreboard').innerText = 'Điểm: ' + score + ' | Thời gian: ' + timeLeft + 's';
+}
+
+function startGame() {
+    updateScoreboard();
+    gameInterval = setInterval(() => {
+        timeLeft--;
+        updateScoreboard();
+        if (timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
+
+    spawnInterval = setInterval(() => {
+        createFirework();
+    }, 500);
+}
+
+function endGame() {
+    clearInterval(gameInterval);
+    clearInterval(spawnInterval);
+    document.getElementById('finalscore').innerHTML = '🎆 Chúc mừng! Bạn đạt ' + score + ' điểm!';
+    document.getElementById('gameover').style.display = 'block';
+}
+
+function restartGame() {
+    document.location.reload();
+}
+
+startGame();
+</script>
+
+</body>
+</html>
