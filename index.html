@@ -1,134 +1,166 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bắn Pháo Hoa - Chào mừng 30/4</title>
-<style>
-body {
-    margin: 0;
-    overflow: hidden;
-    background: radial-gradient(ellipse at center, #000 0%, #222 100%);
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-}
-#scoreboard {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 22px;
-    background: rgba(0,0,0,0.5);
-    padding: 10px 20px;
-    border-radius: 12px;
-}
-#gameover {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 26px;
-    background: rgba(0,0,0,0.7);
-    padding: 20px 30px;
-    border-radius: 16px;
-    display: none;
-}
-button {
-    padding: 10px 20px;
-    font-size: 18px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: #007aff;
-    color: white;
-}
-button:hover {
-    background-color: #005bb5;
-}
-.firework {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(circle, yellow, red, orange);
-    border-radius: 50%;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pháo hoa - Sổ tay Điều tra Hình sự</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      background: linear-gradient(#001f3f, #0074D9);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .banner {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+    .banner img {
+      width: 100px;
+      animation: wave 2s infinite;
+    }
+    .title {
+      font-size: 32px;
+      color: #ffcc00;
+      margin-top: 10px;
+    }
+    .subtitle {
+      font-size: 18px;
+      color: #ffffff;
+      margin-top: 5px;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      color: #ffffff;
+      z-index: 2;
+    }
+    @keyframes wave {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(5deg); }
+      100% { transform: rotate(0deg); }
+    }
+  </style>
 </head>
 <body>
+  <div class="banner">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg" alt="Cờ Việt Nam">
+    <div class="title">30-4</div>
+    <div class="subtitle">Sổ tay Điều tra hình sự</div>
+  </div>
+  <div id="score">Điểm: 0</div>
+  <canvas id="canvas"></canvas>
 
-<div id="scoreboard">Điểm: 0 | Thời gian: 15s</div>
-<div id="gameover">
-    <div id="finalscore"></div>
-    <button onclick="restartGame()">Chơi lại</button>
-</div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let fireworks = [];
+    let score = 0;
+    let timeLeft = 15; // giây
+    let playing = true;
 
-<script>
-let score = 0;
-let timeLeft = 15;
-let gameInterval;
-let spawnInterval;
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
-function createFirework() {
-    const firework = document.createElement('div');
-    firework.classList.add('firework');
-    firework.style.top = window.innerHeight + 'px';
-    firework.style.left = Math.random() * (window.innerWidth - 50) + 'px';
-    document.body.appendChild(firework);
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    const speed = Math.random() * 2 + 1;
-
-    const move = setInterval(() => {
-        let top = parseFloat(firework.style.top);
-        if (top < -50) {
-            firework.remove();
-            clearInterval(move);
-        } else {
-            firework.style.top = (top - speed*5) + 'px';
+    class Firework {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.particles = [];
+        for (let i = 0; i < 50; i++) {
+          this.particles.push({
+            x: x,
+            y: y,
+            vx: Math.random() * 4 - 2,
+            vy: Math.random() * 4 - 2,
+            alpha: 1
+          });
         }
-    }, 30);
+      }
+      update() {
+        this.particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.02;
+        });
+      }
+      draw(ctx) {
+        this.particles.forEach(p => {
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = 'rgb(' + (Math.random()*255|0) + ',' + (Math.random()*255|0) + ',' + (Math.random()*255|0) + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+    }
 
-    firework.addEventListener('click', () => {
-        score += 10;
-        updateScoreboard();
-        firework.remove();
-        clearInterval(move);
+    function spawnFirework(x, y) {
+      fireworks.push(new Firework(x, y));
+    }
+
+    canvas.addEventListener('click', function(e) {
+      if (!playing) return;
+      const x = e.clientX;
+      const y = e.clientY;
+      spawnFirework(x, y);
+      score += 10;
+      document.getElementById('score').innerText = 'Điểm: ' + score;
     });
-}
 
-function updateScoreboard() {
-    document.getElementById('scoreboard').innerText = 'Điểm: ' + score + ' | Thời gian: ' + timeLeft + 's';
-}
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      fireworks.forEach(fw => {
+        fw.update();
+        fw.draw(ctx);
+      });
+      fireworks = fireworks.filter(fw => fw.particles.some(p => p.alpha > 0));
+      if (playing) requestAnimationFrame(animate);
+    }
+    animate();
 
-function startGame() {
-    updateScoreboard();
-    gameInterval = setInterval(() => {
-        timeLeft--;
-        updateScoreboard();
-        if (timeLeft <= 0) {
-            endGame();
-        }
+    // Đếm ngược
+    const countdown = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(countdown);
+        playing = false;
+        setTimeout(() => {
+          ctx.fillStyle = 'white';
+          ctx.font = '40px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Kết thúc! Tổng điểm: ' + score, canvas.width/2, canvas.height/2);
+          if (score >= 100) {
+            ctx.fillStyle = 'yellow';
+            ctx.font = '30px Arial';
+            ctx.fillText('Chúc mừng! Bạn là người chiến thắng!', canvas.width/2, canvas.height/2 + 50);
+            for (let i = 0; i < 5; i++) {
+              spawnFirework(Math.random() * canvas.width, Math.random() * canvas.height/2);
+            }
+          }
+        }, 500);
+      }
     }, 1000);
-
-    spawnInterval = setInterval(() => {
-        createFirework();
-    }, 500);
-}
-
-function endGame() {
-    clearInterval(gameInterval);
-    clearInterval(spawnInterval);
-    document.getElementById('finalscore').innerHTML = '🎆 Chúc mừng! Bạn đạt ' + score + ' điểm!';
-    document.getElementById('gameover').style.display = 'block';
-}
-
-function restartGame() {
-    document.location.reload();
-}
-
-startGame();
-</script>
-
+  </script>
 </body>
 </html>
